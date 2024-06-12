@@ -1,0 +1,56 @@
+# 1) Initialization
+units lj
+dimension 3
+atom_style atomic
+pair_style lj/cut 2.5
+boundary p p p
+# atom_modify map array
+lattice bcc 0.80
+
+# 2) System definition
+region myreg block -30 30 -30 30 -30 30
+create_box 2 myreg
+create_atoms 1 random 200 341341 myreg
+# create_atoms 2 random 100 682927 myreg
+ 
+group second type 2
+
+# 3) Simulation settings
+mass 1 1
+mass 2 1
+pair_coeff 1 1 1.0 1.0
+pair_coeff 2 2 0.5 1.0
+pair_coeff 1 2 1.0 1.5
+pair_coeff 2 1 1.0 2.5
+ 
+# 4) Visualization
+thermo 10
+ 
+# 5) Run
+minimize 1.0e-4 1.0e-6 1000 10000
+# timestep 0.0005
+# run 100000
+                           
+# PART B - MOLECULAR DYNAMICS
+ 
+# 4) Visualization
+thermo 1000
+variable kinetic_energy equal ke
+variable potential_energy equal pe
+variable pressure equal press
+fix myat1 all ave/time 10 1 10 v_kinetic_energy v_potential_energy v_pressure file energy_lat_nh.dat
+dump mydmp all atom 1000 nose_lattice.dump.lammpstrj
+ 
+
+compute msd_second second msd com yes
+compute rdf all rdf 100 1 2
+fix rdf_avg all ave/time 100 1 100 c_rdf[*] file rdf_nh_output_lattice.dat mode vector
+fix msd_avg second ave/time 10 1 10 c_msd_second file msd_avg_lat_nh.dat mode vector
+
+# 5) Run
+fix nvt all nvt temp 300.0 300.0 100.0
+# fix mynve all nve
+# fix mylgv all langevin 10.0 10.0 0.2 1530917
+# thermo_modify lost ignore flush yes
+timestep 0.0005
+run 10000000
